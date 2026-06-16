@@ -62,48 +62,66 @@ class AuthController extends StateNotifier<AuthState> {
   final ApiService _apiService;
 
   Future<void> _restoreSession() async {
-    final accessToken = await _storage.read(key: _accessTokenKey);
-    final refreshToken = await _storage.read(key: _refreshTokenKey);
-    final userJson = await _storage.read(key: _userKey);
+    try {
+      final accessToken = await _storage.read(key: _accessTokenKey);
+      final refreshToken = await _storage.read(key: _refreshTokenKey);
+      final userJson = await _storage.read(key: _userKey);
 
-    if (accessToken == null || refreshToken == null || userJson == null) {
+      if (accessToken == null || refreshToken == null || userJson == null) {
+        state = const AuthState(isLoading: false);
+        return;
+      }
+
+      state = AuthState(
+        isLoading: false,
+        isAuthenticated: true,
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        user: jsonDecode(userJson) as Map<String, dynamic>,
+      );
+    } catch (_) {
+      await _storage.deleteAll();
       state = const AuthState(isLoading: false);
-      return;
     }
-
-    state = AuthState(
-      isLoading: false,
-      isAuthenticated: true,
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-      user: jsonDecode(userJson) as Map<String, dynamic>,
-    );
   }
 
   Future<void> login(String phone, String password) async {
     state = state.copyWith(isLoading: true);
-    final response = await _apiService.post(
-      '/auth/login',
-      data: {'phone': phone, 'password': password},
-    );
-    await _persist(response);
+    try {
+      final response = await _apiService.post(
+        '/auth/login',
+        data: {'phone': phone, 'password': password},
+      );
+      await _persist(response);
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+      rethrow;
+    }
   }
 
   Future<void> register(Map<String, dynamic> payload) async {
     state = state.copyWith(isLoading: true);
-    final response = await _apiService.post('/auth/register', data: payload);
-    await _persist(response);
+    try {
+      final response = await _apiService.post('/auth/register', data: payload);
+      await _persist(response);
+    } catch (_) {
+      state = state.copyWith(isLoading: false);
+      rethrow;
+    }
   }
 
   Future<void> logout() async {
     final accessToken = state.accessToken;
-    if (accessToken != null) {
-      try {
+    try {
+      if (accessToken != null) {
         await _apiService.post('/auth/logout', token: accessToken);
-      } catch (_) {}
+      }
+    } catch (_) {
+      // Ignore remote logout failures and clear the local session regardless.
+    } finally {
+      await _storage.deleteAll();
+      state = const AuthState(isLoading: false);
     }
-    await _storage.deleteAll();
-    state = const AuthState(isLoading: false);
   }
 
   Future<void> _persist(Map<String, dynamic> response) async {

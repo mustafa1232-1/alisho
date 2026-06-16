@@ -28,26 +28,51 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   String? _studentStage;
   String? _jobTitle;
   Map<String, dynamic>? _meta;
+  bool _isMetaLoading = false;
+  String? _metaError;
 
   @override
   void initState() {
     super.initState();
-    _loadMeta();
+    if (widget.isRegister) {
+      _loadMeta();
+    }
   }
 
   Future<void> _loadMeta() async {
-    final meta =
-        await ref.read(apiServiceProvider).get('/meta/registration') as Map<String, dynamic>;
-    final blocks = meta['blocks'] as Map<String, dynamic>;
-    final complex = (blocks[_block] as Map<String, dynamic>).keys.first;
-    final building = ((blocks[_block][complex] as List<dynamic>).first).toString();
-
     setState(() {
-      _meta = meta;
-      _complex = complex;
-      _building = building;
-      _studentStage = (meta['studentStages'] as List<dynamic>).first as String;
+      _isMetaLoading = true;
+      _metaError = null;
     });
+
+    try {
+      final meta =
+          await ref.read(apiServiceProvider).get('/meta/registration') as Map<String, dynamic>;
+      final blocks = meta['blocks'] as Map<String, dynamic>;
+      final blockData = blocks[_block] as Map<String, dynamic>? ?? <String, dynamic>{};
+      final complex = blockData.keys.isEmpty ? null : blockData.keys.first;
+      final buildingValues = complex == null
+          ? const <dynamic>[]
+          : (blockData[complex] as List<dynamic>? ?? const <dynamic>[]);
+      final studentStages = (meta['studentStages'] as List<dynamic>? ?? const <dynamic>[])
+          .map((stage) => stage.toString())
+          .toList();
+
+      if (!mounted) return;
+      setState(() {
+        _meta = meta;
+        _complex = complex;
+        _building = buildingValues.isEmpty ? null : buildingValues.first.toString();
+        _studentStage = studentStages.isEmpty ? null : studentStages.first;
+        _isMetaLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isMetaLoading = false;
+        _metaError = 'تعذر تحميل بيانات التسجيل. تأكد من اتصال التطبيق بالسيرفر.';
+      });
+    }
   }
 
   @override
@@ -89,6 +114,25 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         const SizedBox(height: 12),
                         const Text('مكتبة عليشو - مكتبة، مطبعة، وخدمات طلابية'),
                         const SizedBox(height: 24),
+                        if (widget.isRegister && _isMetaLoading) ...[
+                          const LinearProgressIndicator(),
+                          const SizedBox(height: 16),
+                        ],
+                        if (widget.isRegister && _metaError != null) ...[
+                          Text(
+                            _metaError!,
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          ),
+                          const SizedBox(height: 8),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: _loadMeta,
+                              child: const Text('إعادة المحاولة'),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
                         if (widget.isRegister) ...[
                           _field(_fullNameController, 'الاسم الكامل'),
                           const SizedBox(height: 12),
@@ -213,7 +257,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                         ],
                         const SizedBox(height: 24),
                         FilledButton(
-                          onPressed: authState.isLoading ? null : _submit,
+                          onPressed: authState.isLoading || (widget.isRegister && _meta == null)
+                              ? null
+                              : _submit,
                           child: Text(widget.isRegister ? 'إنشاء الحساب' : 'دخول'),
                         ),
                         const SizedBox(height: 12),
