@@ -1,0 +1,25 @@
+{
+  "name": "alisho-library-monorepo",
+  "private": true,
+  "description": "Monorepo for the Alisho Library Flutter app and NestJS backend.",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "backend:install": "cd backend && npm install",
+    "backend:db:start": "cd backend && npm run db:local:start",
+    "backend:db:stop": "cd backend && npm run db:local:stop",
+    "backend:prisma:generate": "cd backend && npm run prisma:generate",
+    "backend:migrate": "cd backend && npm run prisma:migrate",
+    "backend:seed": "cd backend && npm run seed",
+    "backend:dev": "cd backend && npm run start:dev",
+    "backend:build": "cd backend && npm run build",
+    "backend:test": "cd backend && npm test",
+    "backend:test:e2e": "cd backend && npm run test:e2e",
+    "app:pub:get": "cd app && flutter pub get",
+    "app:analyze": "cd app && flutter analyze",
+    "app:test": "cd app && flutter test",
+    "app:build:windows": "cd app && flutter build windows",
+    "verify": "npm run backend:build && npm run backend:test && npm run backend:test:e2e && npm run app:analyze && npm run app:test"
+  }
+}
