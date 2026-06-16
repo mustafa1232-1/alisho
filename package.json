@@ -6,6 +6,7 @@
     "node": "22.x"
   },
   "scripts": {
+    "backend:ci": "cd backend && npm ci",
     "backend:install": "cd backend && npm install",
     "backend:db:start": "cd backend && npm run db:local:start",
     "backend:db:stop": "cd backend && npm run db:local:stop",
@@ -20,6 +21,8 @@
     "app:analyze": "cd app && flutter analyze",
     "app:test": "cd app && flutter test",
     "app:build:windows": "cd app && flutter build windows",
+    "railway:build": "cd backend && npm ci && npm run build",
+    "railway:start": "cd backend && npm run prisma:deploy && npm run start:prod",
     "verify": "npm run backend:build && npm run backend:test && npm run backend:test:e2e && npm run app:analyze && npm run app:test"
   }
 }

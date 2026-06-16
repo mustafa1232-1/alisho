@@ -1,7 +1,7 @@
-node_modules/
-dist/
-coverage/
-storage/
-.local-postgres/
-.env
+/node_modules/
+/dist/
+/coverage/
+/storage/
+/.local-postgres/
+/.env
 *.log
