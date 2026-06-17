@@ -4,7 +4,9 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  Matches,
   MaxLength,
+  MinLength,
 } from 'class-validator';
 
 export class CreateProductDto {
@@ -193,10 +195,12 @@ export class CreateDeliveryUserDto {
 
   @IsString()
   @IsNotEmpty()
+  @Matches(/^07\d{9}$/)
   phone!: string;
 
   @IsString()
   @MaxLength(100)
+  @MinLength(8)
   password!: string;
 
   @IsOptional()
@@ -206,6 +210,10 @@ export class CreateDeliveryUserDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  isActive?: string;
 }
 
 export class UpdateDeliveryUserDto {
@@ -215,10 +223,12 @@ export class UpdateDeliveryUserDto {
 
   @IsOptional()
   @IsString()
+  @Matches(/^07\d{9}$/)
   phone?: string;
 
   @IsOptional()
   @IsString()
+  @MinLength(8)
   password?: string;
 
   @IsOptional()

@@ -88,6 +88,18 @@ class ApiService {
     return response.data ?? <int>[];
   }
 
+  String resolveUrl(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
+      return path;
+    }
+
+    final base = _dio.options.baseUrl.endsWith('/')
+        ? _dio.options.baseUrl.substring(0, _dio.options.baseUrl.length - 1)
+        : _dio.options.baseUrl;
+    final normalizedPath = path.startsWith('/') ? path : '/$path';
+    return '$base$normalizedPath';
+  }
+
   Options _options(String? token) {
     return Options(
       headers: {
@@ -100,4 +112,31 @@ class ApiService {
     if (data is Map<String, dynamic>) return data;
     return jsonDecode(jsonEncode(data)) as Map<String, dynamic>;
   }
+}
+
+String describeApiError(Object error) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    if (data is Map<String, dynamic>) {
+      final message = data['message'];
+      if (message is String && message.trim().isNotEmpty) {
+        return message;
+      }
+      if (message is List && message.isNotEmpty) {
+        return message.join('\n');
+      }
+      final fallback = data['error'];
+      if (fallback is String && fallback.trim().isNotEmpty) {
+        return fallback;
+      }
+    }
+
+    if (error.type == DioExceptionType.connectionError ||
+        error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout) {
+      return 'تعذّر الاتصال بالسيرفر. تأكد من اتصالك بالإنترنت.\nConnection to the server failed.';
+    }
+  }
+
+  return error.toString();
 }

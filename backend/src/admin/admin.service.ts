@@ -1271,17 +1271,19 @@ export class AdminService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
+    const isActive = this.toBoolean(dto.isActive, true);
     const user = await this.prisma.user.create({
       data: {
-        fullName: dto.fullName,
-        phone: dto.phone,
+        fullName: dto.fullName.trim(),
+        phone: dto.phone.trim(),
         passwordHash,
         roleId: role.id,
+        isActive,
         deliveryProfile: {
           create: {
-            vehicleInfo: dto.vehicleInfo,
-            notes: dto.notes,
-            isActive: true,
+            vehicleInfo: dto.vehicleInfo?.trim() || null,
+            notes: dto.notes?.trim() || null,
+            isActive,
           },
         },
       },
